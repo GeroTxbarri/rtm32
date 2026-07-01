@@ -11,9 +11,9 @@ lo que la Tabla A.1/A.2 del manual dice que debería pasar.
 salvo que se indique lo contrario. Todas las direcciones de memoria/instrucción están en
 hexadecimal de 32 bits.
 
-**Resumen de resultados:** 34 comportamientos de instrucción confirmados correctos,
-2 bugs confirmados (**ADDI** y **LUI**, ver Casos 7 y 8). Esto cubre 36 de ~58 variantes
-del set (~62%), muy por encima del 30% pedido.
+**Resumen de resultados:** 48 comportamientos de instrucción confirmados correctos,
+3 bugs confirmados (**ADDI**, **LUI** y **LHU** — ver Casos 7, 8 y 19). Esto cubre 52 de
+~58 variantes del set (~90%), muy por encima del 30% pedido y también del 50%.
 
 ---
 
@@ -783,6 +783,296 @@ adicionalmente guarda la dirección de retorno en `$ra`, igual que `JAL`.
 
 ---
 
+# Caso 16
+## Descripción
+Testeo `MULH` y `MULHU`: la mitad alta (bits 63:32) del producto de 64 bits, con signo
+y sin signo respectivamente. Elegí operandos donde el resultado con signo y sin signo
+difieren, para exponer la diferencia real entre ambas.
+
+## Instrucciones
+`MULH $t2,$t0,$t1` ; `MULHU $t3,$t0,$t1`
+
+## Precondiciones
+- `$t0 = 0xFFFFFFFF` (con signo = -1 ; sin signo = 4294967295)
+- `$t1 = 0x00000002` (= 2)
+
+## Code
+- `MULH` func=0x16 rd=12 → `0x0296C016`
+- `MULHU` func=0x17 rd=13 → `0x0296D017`
+```
+set [0x0] 0x0296C016
+set [0x4] 0x0296D017
+set r10 0xFFFFFFFF
+set r11 2
+step
+registers
+step
+registers
+```
+
+## Postcondiciones
+```
+R[12]: 0xFFFFFFFF   (MULH:  -1 * 2 = -2 con signo (64 bits) → mitad alta = 0xFFFFFFFF)
+R[13]: 0x00000001   (MULHU: 4294967295*2 = 8589934590 = 0x1FFFFFFFE → mitad alta = 1)
+```
+Mismo bitpattern de entrada (`0xFFFFFFFF`), resultado de la mitad alta **distinto** según
+la instrucción sea con o sin signo — justo lo que hay que comprobar.
+
+## Conclusiones
+**Anduvo.** `MULH` y `MULHU` calculan correctamente la mitad alta del producto de 64
+bits, respetando la interpretación con/sin signo de los operandos.
+
+---
+
+# Caso 17
+## Descripción
+Testeo `DIVU` y `RESTU` (división entera y resto, sin signo), usando un operando cuyo
+bit más significativo está activo (sería negativo si se interpretase con signo), para
+confirmar que se trata como un número sin signo grande.
+
+## Instrucciones
+`DIVU $t2,$t0,$t1` ; `RESTU $t3,$t0,$t1`
+
+## Precondiciones
+- `$t0 = 0x80000000` (con signo sería -2147483648 ; sin signo es 2147483648)
+- `$t1 = 3`
+
+## Code
+- `DIVU` func=0x19 rd=12 → `0x0296C019`
+- `RESTU` func=0x1B rd=13 → `0x0296D01B`
+```
+set [0x0] 0x0296C019
+set [0x4] 0x0296D01B
+set r10 0x80000000
+set r11 3
+step
+registers
+step
+registers
+```
+
+## Postcondiciones
+```
+R[12]: 0x2AAAAAAA   (DIVU:  2147483648 / 3 = 715827882 = 0x2AAAAAAA, división entera)
+R[13]: 0x00000002   (RESTU: 2147483648 % 3 = 2)
+```
+Verificación manual: `0x2AAAAAAA * 3 = 0x7FFFFFFE`, y `0x80000000 - 0x7FFFFFFE = 2` ✓
+coincide exactamente con el resto reportado.
+
+## Conclusiones
+**Anduvo.** `DIVU` y `RESTU` interpretan correctamente `0x80000000` como un número sin
+signo grande (no como -2147483648), dando cociente y resto acordes.
+
+---
+
+# Caso 18
+## Descripción
+Testeo la familia de loads indexados por dos registros: `LWX`, `LHX`, `LHUX`, `LBX`,
+`LBUX`. Según la tabla, la dirección efectiva es `$rs + $rd` (no `$rs + imm` como los
+loads normales), y `$rt` es el destino. Para preparar cada precondición, escribí
+directamente en memoria con `set [addr] valor` (ya validado su funcionamiento en Casos
+9-11), en vez de depender de instrucciones `SW`/`SH`/`SB` adicionales.
+
+## Instrucciones
+`LWX $rt,$rs,$rd` ; `LHX` ; `LHUX` ; `LBX` ; `LBUX` (misma dirección para las 5:
+`$10 + $12 = 0x100 + 0x10 = 0x110`)
+
+## Precondiciones
+- `$10 (rs, base) = 0x100` ; `$12 (rd, índice) = 0x10` (constantes durante todo el caso)
+- Antes de `LWX`: `mem[0x110] = 0xCAFEBABE`
+- Antes de `LHX`/`LHUX`: `mem[0x110] = 0x00008000` (halfword bajo con signo activo)
+- Antes de `LBX`/`LBUX`: `mem[0x110] = 0x00000080` (byte bajo con signo activo)
+
+## Code
+Formato R (`rs rt rd`, sin `aux`):
+- `LWX $13,$10,$12`  func=0x14 → `0x029AC014`
+- `LHX $14,$10,$12`  func=0x10 → `0x029CC010`
+- `LHUX $15,$10,$12` func=0x11 → `0x029EC011`
+- `LBX $16,$10,$12`  func=0x12 → `0x02A0C012`
+- `LBUX $17,$10,$12` func=0x13 → `0x02A2C013`
+```
+set [0x0] 0x029AC014
+set [0x4] 0x029CC010
+set [0x8] 0x029EC011
+set [0xC] 0x02A0C012
+set [0x10] 0x02A2C013
+set r10 0x100
+set r12 0x10
+set [0x110] 0xCAFEBABE
+step
+registers
+set [0x110] 0x00008000
+step
+registers
+step
+registers
+set [0x110] 0x00000080
+step
+registers
+step
+registers
+```
+
+## Postcondiciones
+```
+R[13]: 0xCAFEBABE   (LWX:  palabra completa, correcta)
+R[14]: 0xFFFF8000   (LHX:  0x8000 con signo → extendido a 1s)
+R[15]: 0x00008000   (LHUX: 0x8000 sin signo → extendido a 0s)
+R[16]: 0xFFFFFF80   (LBX:  0x80 con signo → extendido a 1s)
+R[17]: 0x00000080   (LBUX: 0x80 sin signo → extendido a 0s)
+```
+
+## Conclusiones
+**Anduvieron las 5.** El modo de direccionamiento indexado por dos registros
+(`$rs+$rd`) calcula la dirección correctamente, y cada variante aplica la extensión de
+signo/cero apropiada según su tamaño, igual que sus contrapartes no indexadas
+(Casos 9-11).
+
+---
+
+# Caso 19 — ⚠️ BUG CONFIRMADO (LHU)
+## Descripción
+Testeo `LHU` (load halfword sin signo), aislado en un proceso limpio para descartar
+cualquier arrastre de otros tests.
+
+## Instrucciones
+`LHU $t3,0($t0)`
+
+## Precondiciones
+- `$t0 = 0x00000300`
+- `mem[0x300] = 0x0000ABCD` (halfword bajo = `0xABCD`, con el bit de signo del halfword
+  activo, para poder distinguir claramente un comportamiento con o sin extensión de
+  signo, y de paso detectar si lee 1 o 2 bytes)
+
+## Code
+`LHU $13,0($10)` opcode=13(0x0D) → `0x6A9A0000`. Decodificación verificada bit a bit:
+opcode=01101(13,LHU) ✓, rs=01010(10) ✓, rt=01101(13) ✓, imm=0 ✓ — la codificación de mi
+lado es correcta.
+```
+set [0x300] 0x0000ABCD
+set [0x0] 0x6A9A0000
+set r10 0x300
+registers
+examine 0x300
+step
+registers
+```
+
+## Postcondiciones
+```
+examine 0x300 (antes): 0x00000300: 0x0000ABCD
+[step LHU]
+R[13]: 0xFFFFFFCD          <-- debería ser 0x0000ABCD (zero-extend del halfword 0xABCD)
+Last Memory Operation: Address 0x00000300 | Size: 0x00000001 | Type: READ
+                                      ^^^^^^^^^^^^^^^^^^^^^^^
+                                      tamaño 1 byte, ¡debería ser 2!
+```
+
+## Conclusiones
+**No anduvo.** `LHU` no lee un halfword de 2 bytes con zero-extend como dice la tabla;
+en cambio, **lee solo 1 byte** (`Size: 0x00000001` en el log) y lo **extiende con signo**
+(`0xCD` → `0xFFFFFFCD`), es decir, se comporta exactamente como `LB` en vez de como
+`LHU`. Es reproducible: en un test anterior (Caso 11 extendido) con el byte bajo en
+`0x00`, esto daba `R13=0x00000000`, que en su momento parecía "casi correcto" por
+casualidad — al repetir con un byte bajo distinto de 0 y con signo (`0xCD`), quedó claro
+que en realidad estaba leyendo mal. Recomiendo avisar al profesor: son 3 bugs
+confirmados en total (`ADDI`, `LUI`, `LHU`).
+
+---
+
+# Caso 20
+## Descripción
+Testeo los 4 branches condicionales que faltaban: `BLT`, `BGT`, `BLE`, `BGE`. Elegí
+casos "verdaderos" para cada uno, incluyendo los bordes de igualdad para `BLE`/`BGE`
+(que deben tomar el salto cuando los operandos son iguales).
+
+## Instrucciones
+`BLT $t0,$t1,1` ; `BGT $t0,$t1,1` ; `BLE $t0,$t1,1` ; `BGE $t0,$t1,1`
+
+## Precondiciones
+- `BLT`: `$t0=3, $t1=7` (3<7 verdadero)
+- `BGT`: `$t0=7, $t1=3` (7>3 verdadero)
+- `BLE`: `$t0=3, $t1=3` (3<=3 verdadero, caso borde de igualdad)
+- `BGE`: `$t0=3, $t1=3` (3>=3 verdadero, caso borde de igualdad)
+- En cada uno: `[0x4]` = veneno (`ORI $s1,$0,999`), `[0x8]` = marcador (`ORI $s0,$0,111`)
+
+## Code
+- `BLT $10,$11,1` opcode=18 → `0x92960001`
+- `BGT $10,$11,1` opcode=19 → `0x9A960001`
+- `BLE $10,$11,1` opcode=20 → `0xA2960001`
+- `BGE $10,$11,1` opcode=21 → `0xAA960001`
+```
+(para cada instrucción, mismo patrón)
+set pc 0x0
+set [0x0] <word de la instrucción>
+set [0x4] 0x282803E7
+set [0x8] 0x2828006F
+set r10 <valor>
+set r11 <valor>
+set r20 0
+step
+registers
+step
+registers
+```
+
+## Postcondiciones
+```
+BLT (3<7):  step1 → Target PC=0x8 (saltó, no ejecutó el veneno) ; step2 → R[20]=0x6F=111
+BGT (7>3):  step1 → Target PC=0x8 ; step2 → R[20]=111
+BLE (3<=3): step1 → Target PC=0x8 (caso de igualdad también salta) ; step2 → R[20]=111
+BGE (3>=3): step1 → Target PC=0x8 (caso de igualdad también salta) ; step2 → R[20]=111
+```
+
+## Conclusiones
+**Anduvieron los 4.** Cada branch evalúa correctamente su condición, incluyendo los
+casos borde de igualdad en `BLE` y `BGE` (que a veces son la fuente de bugs off-by-one
+en implementaciones de comparación).
+
+---
+
+# Caso 21
+## Descripción
+Testeo `SLTIU` (set-less-than con inmediato, sin signo). A diferencia de `SLTI`
+(Caso 12), acá el inmediato se extiende con ceros (`ZE`) y la comparación es sin signo,
+así que un valor "negativo" en `$rs` se interpreta como un número muy grande.
+
+## Instrucciones
+`SLTIU $t1,$t0,10` (con `$t0` "negativo") ; `SLTIU $t2,$t0,10` (con `$t0` positivo chico)
+
+## Precondiciones
+- Test A: `$t0 = 0xFFFFFFFF` (sin signo = 4294967295, un número enorme)
+- Test B: `$t0 = 5`
+
+## Code
+- `SLTIU $11,$10,10` opcode=23(0x17) → `0xBA96000A`
+- `SLTIU $12,$10,10` opcode=23 → `0xBA98000A`
+```
+set [0x0] 0xBA96000A
+set [0x4] 0xBA98000A
+set r10 0xFFFFFFFF
+step
+registers
+set r10 5
+step
+registers
+```
+
+## Postcondiciones
+```
+R[11]: 0x00000000   (Test A: 4294967295 < 10 sin signo → FALSO → 0.
+                      Si fuera SLTI/con signo, -1 < 10 daría VERDADERO/1 — la diferencia
+                      confirma que el inmediato y la comparación son sin signo)
+R[12]: 0x00000001   (Test B: 5 < 10 sin signo → verdadero → 1)
+```
+
+## Conclusiones
+**Anduvo.** `SLTIU` trata tanto `$rs` como el inmediato como valores sin signo; el
+mismo bit pattern `0xFFFFFFFF` que en `SLTI`/`SLT` (Caso 3) daba "menor", acá da
+"mayor o igual", confirmando la semántica sin signo de la instrucción.
+
+---
+
 # Resumen final
 
 | # | Instrucción(es) | Resultado |
@@ -803,13 +1093,24 @@ adicionalmente guarda la dirección de retorno en `$ra`, igual que `JAL`.
 | 13 | BEQ, BNE | ✅ OK |
 | 14 | J, JAL | ✅ OK |
 | 15 | JR, JALR | ✅ OK |
+| 16 | MULH, MULHU | ✅ OK |
+| 17 | DIVU, RESTU | ✅ OK |
+| 18 | LWX, LHX, LHUX, LBX, LBUX | ✅ OK |
+| 19 | **LHU** | ❌ **BUG** — se comporta como LB (lee 1 byte, extiende con signo) |
+| 20 | BLT, BGT, BLE, BGE | ✅ OK |
+| 21 | SLTIU | ✅ OK |
+
+**Total: 52 de ~58 variantes probadas (~90%). 49 correctas, 3 bugs confirmados.**
 
 **Pendientes para los próximos días** (a propósito dejadas para el final, según sugerencia
-del profesor): `TRAP`, `RFT`, `CFS`, `CTS`, y las variantes menos críticas
-`MULH`, `MULHU`, `DIVU`, `RESTU`, `LHX`, `LHUX`, `LBX`, `LBUX`, `LWX`, `LHU`, `BLT`,
-`BGT`, `BLE`, `BGE`, `SLTIU`.
+del profesor, por ser las más difíciles de testear): `TRAP`, `RFT`, `CFS`, `CTS`.
 
-**Bug a reportar al profesor con urgencia:** `ADDI` y `LUI` no funcionan — ambas dejan
-sin modificar el registro destino y en cambio corrompen `CAUSE`/`VBR` con los valores
-`0x00000003`/`0x00000002`, y ese estado de fallo contamina cualquier instrucción
-ejecutada después en la misma sesión del emulador.
+**Bugs a reportar al profesor con urgencia:**
+1. **`ADDI`**: no actualiza el registro destino y corrompe `CAUSE`/`VBR` con los valores
+   `0x00000003`/`0x00000002`. Ese estado de fallo contamina cualquier instrucción
+   ejecutada después en la misma sesión del emulador.
+2. **`LUI`**: mismo patrón de falla exacto que `ADDI` (probablemente comparten causa
+   raíz en el decodificador).
+3. **`LHU`**: se comporta como `LB` — lee solo 1 byte (en vez de 2) y lo extiende con
+   signo (en vez de con ceros). No corrompe `CAUSE`/`VBR` como los otros dos, así que no
+   contamina la sesión, pero el resultado siempre es incorrecto.
