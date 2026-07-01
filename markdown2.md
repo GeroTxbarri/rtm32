@@ -363,7 +363,7 @@ profesor con esta evidencia concreta.
 
 ---
 
-# Caso 8 — ⚠️ Un bug más (LUI), el resto OK
+# Caso 8 — Un bug más (LUI), el resto OK
 ## Descripción
 Testeo las 4 operaciones lógicas con inmediato (`ANDI`, `ANDIH`, `ORI`, `XORI`) y la
 carga de constante alta `LUI`. El manual advierte de un bug conocido en `ANDI`, así que
