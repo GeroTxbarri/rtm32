@@ -281,7 +281,7 @@ R[14]: 0x00000001   (REST: 7%3 = 1)
 
 ---
 
-# Caso 7 — ⚠️ BUG CONFIRMADO
+# Caso 7 — BUG CONFIRMADO
 ## Descripción
 Testeo `ADDI` (suma con inmediato de 17 bits), la instrucción que varios compañeros
 reportaron como sospechosa. Se probó en dos configuraciones distintas y aisladas
@@ -534,17 +534,17 @@ R[13]: 0x00000080   (LBU: 0x80 sin signo → se extiende con 0s)
 
 | # | Instrucción(es) | Resultado |
 |---|---|---|
-| 1 | ADD, SUB | ✅ OK |
-| 2 | AND, OR, XOR, NOR | ✅ OK |
-| 3 | SLT, SLTU | ✅ OK |
-| 4 | SLL, SRL, SRA | ✅ OK |
-| 5 | SLLR, SRLR, SRAR | ✅ OK |
-| 6 | MUL, DIV, REST | ✅ OK |
-| 7 | **ADDI** | ❌ **BUG** — no actualiza destino, corrompe CAUSE/VBR |
-| 8 | ANDI, ANDIH, ORI, XORI | ✅ OK |
-| 8 | **LUI** | ❌ **BUG** — mismo patrón de falla que ADDI |
-| 9 | SW, LW | ✅ OK |
-| 10 | SB, LB, LBU | ✅ OK |
+| 1 | ADD, SUB | OK |
+| 2 | AND, OR, XOR, NOR | OK |
+| 3 | SLT, SLTU | OK |
+| 4 | SLL, SRL, SRA | OK |
+| 5 | SLLR, SRLR, SRAR | OK |
+| 6 | MUL, DIV, REST | OK |
+| 7 | **ADDI** | **BUG** — no actualiza destino, corrompe CAUSE/VBR |
+| 8 | ANDI, ANDIH, ORI, XORI | OK |
+| 8 | **LUI** | **BUG** — mismo patrón de falla que ADDI |
+| 9 | SW, LW | OK |
+| 10 | SB, LB, LBU | OK |
 
 **Total: 28 de ~55-58 variantes probadas (~50%). 26 correctas, 2 bugs confirmados.**
 
