@@ -6,14 +6,17 @@ y `examine`. Cada instrucción se codificó a mano a 32 bits según los formatos
 del manual, se cargó en memoria con `set [addr] 0xPALABRA` y se ejecutó con `step`.
 El resultado se comparó contra la Tabla A.1/A.2 del manual.
 
-Convención de registros: $t0=$10, $t1=$11, $t2=$12 (fuente1, fuente2, destino), salvo
-que se indique otra cosa.
+Convención de registros: $10, $11 y $12 como fuente1, fuente2 y destino, salvo que se
+indique otra cosa. Se usan números de registro, no alias por nombre, porque el
+profesor reordenó la tabla de alias durante la actividad (el PDF nuevo lo aclara: no
+afecta la codificación).
 
-Nota: el profesor publicó una versión nueva de la máquina que corrige ADDI y LUI.
-Los Casos 7 y 8 fueron re-testeados contra esa versión.
+Nota: durante la actividad el profesor corrigió ADDI, LUI (Casos 7-8), LHU (Caso 19)
+y SW (Caso 9) en versiones sucesivas de la máquina. Esos casos fueron re-testeados
+contra la última versión.
 
-Cobertura: 58 de 58 instrucciones probadas. 54 correctas. No funcionan: LHU, CFS, CTS,
-TRAP, RFT (Casos 19, 22, 23).
+Cobertura: 58 de 58 instrucciones probadas. 54 correctas. No funcionan: CFS, CTS,
+TRAP, RFT (Casos 22, 23).
 
 ---
 
@@ -389,7 +392,8 @@ registers
 - R12 tras LW: 0xDEADBEEF
 
 ## Conclusiones
-Anduvo. SW escribe la palabra completa y LW la recupera intacta.
+Anduvo. SW escribe la palabra completa y LW la recupera intacta. Re-testeado tras el
+fix de SW del profesor: mismo resultado.
 
 ---
 
@@ -581,7 +585,7 @@ registers
 - JAL: tras step 1, PC = 0x20 y R31 = 0x4 (PC+4). Tras step 2, R22 = 222.
 
 ## Conclusiones
-Anduvo. J salta correctamente y JAL además guarda la dirección de retorno en $ra.
+Anduvo. J salta correctamente y JAL además guarda la dirección de retorno en $31.
 
 ---
 
@@ -765,14 +769,18 @@ step
 registers
 ```
 
-## Postcondiciones
+## Postcondiciones (versión vieja)
 - R13 = 0xFFFFFFCD (se esperaba 0x0000ABCD)
 - Last Memory Operation: Size = 1 (se esperaba 2)
 
+## Postcondiciones (versión nueva)
+- R13 = 0x0000ABCD (correcto)
+- Last Memory Operation: Size = 2 (correcto)
+
 ## Conclusiones
-No anduvo. LHU lee 1 solo byte y lo extiende con signo, en vez de leer un halfword de
-2 bytes y extenderlo con ceros: se comporta como LB. Confirmado con dos valores de
-memoria distintos.
+En la versión vieja no andaba: leía 1 byte con signo en vez de un halfword con ceros
+(se comportaba como LB). En la versión nueva ya anduvo: mismo test, resultado
+correcto.
 
 ---
 
@@ -885,7 +893,7 @@ step / registers (x5)
 ## Conclusiones
 No anduvieron. A diferencia de ADDI/LUI, no generan excepción: ejecutan pero no
 tienen ningún efecto observable, para ningún índice probado. Parecen no
-implementadas.
+implementadas. Re-testeado contra la versión nueva: mismo resultado.
 
 ---
 
@@ -932,7 +940,8 @@ registers
 ## Conclusiones
 No anduvieron. Disparan el mismo código de causa (3) que tenían ADDI/LUI cuando no
 estaban implementadas. El manejo de $epc parece incompleto en general (tampoco se
-actualiza en una excepción real de acceso desalineado).
+actualiza en una excepción real de acceso desalineado). Re-testeado contra la
+versión nueva: mismo resultado.
 
 ---
 
@@ -949,7 +958,7 @@ actualiza en una excepción real de acceso desalineado).
 | 7 | ADDI | Estaba rota, arreglada en la versión nueva |
 | 8 | ANDI, ANDIH, ORI, ORIH, XORI, XORIH | OK |
 | 8 | LUI | Estaba rota, arreglada en la versión nueva |
-| 9 | SW, LW | OK |
+| 9 | SW, LW | Estaba rota (SW), arreglada en la versión nueva |
 | 10 | SB, LB, LBU | OK |
 | 11 | SH, LH | OK |
 | 12 | SLTI | OK |
@@ -959,7 +968,7 @@ actualiza en una excepción real de acceso desalineado).
 | 16 | MULH, MULHU | OK |
 | 17 | DIVU, RESTU | OK |
 | 18 | LWX, LHX, LHUX, LBX, LBUX | OK |
-| 19 | LHU | No anduvo — se comporta como LB |
+| 19 | LHU | Estaba rota, arreglada en la versión nueva |
 | 20 | BLT, BGT, BLE, BGE | OK |
 | 21 | SLTIU | OK |
 | 22 | CFS, CTS | No implementadas |
