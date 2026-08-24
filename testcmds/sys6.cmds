@@ -1,0 +1,4 @@
+set [0x0] 0x00000023
+step
+registers
+quit

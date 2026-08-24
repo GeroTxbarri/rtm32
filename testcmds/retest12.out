@@ -1,0 +1,28 @@
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+RTM32-0.1.0
+RTM32> RTM32> Register R10 set to 0x0000000A
+RTM32> Register R11 set to 0x00000000
+RTM32> Stepped instructions. Target PC: 0x00000004
+RTM32> === General Purpose Registers ===
+R[ 0]: 0x00000000   R[ 1]: 0x00000000   R[ 2]: 0x00000000   R[ 3]: 0x00000000
+R[ 4]: 0x00000000   R[ 5]: 0x00000000   R[ 6]: 0x00000000   R[ 7]: 0x00000000
+R[ 8]: 0x00000000   R[ 9]: 0x00000000   R[10]: 0x0000000A   R[11]: 0x00000000
+R[12]: 0x00000000   R[13]: 0x00000000   R[14]: 0x00000000   R[15]: 0x00000000
+R[16]: 0x00000000   R[17]: 0x00000000   R[18]: 0x00000000   R[19]: 0x00000000
+R[20]: 0x00000000   R[21]: 0x00000000   R[22]: 0x00000000   R[23]: 0x00000000
+R[24]: 0x00000000   R[25]: 0x00000000   R[26]: 0x00000000   R[27]: 0x00000000
+R[28]: 0x00000000   R[29]: 0x00000000   R[30]: 0x00000000   R[31]: 0x00000000
+
+=== Control & Special Registers ===
+PC      : 0x00000004  CAUSE   : 0x00000003  EPC     : 0x00000000
+BADVADR : 0x00000000  VBR     : 0x00000002
+
+Execution State:
+Mode: KERNEL | Flags: [-----]
+
+Last Memory Operation:
+Address: 0x00000000 | Size: 0x00000004 | Type: FETCH
+RTM32> Shutting down debugger interface session...
+Connection closed by foreign host.

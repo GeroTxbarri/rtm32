@@ -1,0 +1,1046 @@
+<title>RTM32 desde Cero</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --ink: #1b2430;
+    --ink-soft: #58626f;
+    --ink-faint: #8891a0;
+    --paper: #f5f6f8;
+    --surface: #eceef2;
+    --surface-strong: #e2e5eb;
+    --accent: #ad6218;
+    --accent-soft: #ad621822;
+    --rule: #d7dbe1;
+    --code-ink: #33261a;
+    --shadow: 0 1px 2px rgba(27,36,48,0.06), 0 8px 24px rgba(27,36,48,0.05);
+    --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-label: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
+    --font-body: 'IBM Plex Serif', Georgia, serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #e7e9ee;
+      --ink-soft: #a4adbb;
+      --ink-faint: #6d7686;
+      --paper: #11151c;
+      --surface: #1a2029;
+      --surface-strong: #232a35;
+      --accent: #e0954a;
+      --accent-soft: #e0954a26;
+      --rule: #2a3140;
+      --code-ink: #f0e3d3;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e7e9ee;
+    --ink-soft: #a4adbb;
+    --ink-faint: #6d7686;
+    --paper: #11151c;
+    --surface: #1a2029;
+    --surface-strong: #232a35;
+    --accent: #e0954a;
+    --accent-soft: #e0954a26;
+    --rule: #2a3140;
+    --code-ink: #f0e3d3;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0,1fr);
+    max-width: 1280px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  /* ---------- Sidebar / TOC ---------- */
+  nav.toc {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 2.5rem 1.25rem 2.5rem 1.75rem;
+    border-right: 1px solid var(--rule);
+  }
+  .toc-eyebrow {
+    font-family: var(--font-label);
+    font-size: 0.72rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0 0 0.9rem;
+  }
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: toc;
+  }
+  .toc li {
+    counter-increment: toc;
+    margin-bottom: 0.55rem;
+  }
+  .toc a {
+    display: flex;
+    gap: 0.5rem;
+    font-family: var(--font-display);
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    text-decoration: none;
+    line-height: 1.35;
+  }
+  .toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    flex: none;
+    padding-top: 0.05rem;
+  }
+  .toc a:hover { color: var(--accent); }
+  .toc-foot {
+    margin-top: 2rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+    line-height: 1.6;
+  }
+
+  /* ---------- Main content ---------- */
+  main { padding: 3.5rem clamp(1.25rem, 4vw, 4rem) 6rem; min-width: 0; }
+
+  .masthead { max-width: 42rem; margin-bottom: 3.5rem; }
+  .masthead .kicker {
+    font-family: var(--font-label);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0 0 0.9rem;
+  }
+  .masthead h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.1rem, 4vw, 2.9rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 1rem;
+    text-wrap: balance;
+  }
+  .masthead p.lede {
+    font-size: 1.12rem;
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 40rem;
+  }
+
+  section.chapter { max-width: 42rem; margin: 0 0 4rem; scroll-margin-top: 2rem; }
+  section.chapter.wide { max-width: 58rem; }
+
+  .chap-head { display: flex; align-items: baseline; gap: 0.9rem; margin-bottom: 1.5rem; }
+  .chap-num {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--accent);
+    font-weight: 600;
+    flex: none;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.55rem;
+    letter-spacing: -0.005em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.12rem;
+    margin: 2.1rem 0 0.8rem;
+  }
+  section.chapter > p, section.chapter > ul, section.chapter > ol { margin: 0 0 1.1rem; }
+  p { margin: 0 0 1.1rem; }
+  ul, ol { padding-left: 1.35rem; margin: 0 0 1.1rem; }
+  li { margin-bottom: 0.45rem; }
+  li::marker { color: var(--accent); }
+
+  strong { font-weight: 600; color: var(--ink); }
+  em.term { font-style: italic; color: var(--ink); }
+
+  code, .mono {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    color: var(--code-ink);
+    background: var(--accent-soft);
+    padding: 0.1em 0.38em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  pre {
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    line-height: 1.7;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    overflow-x: auto;
+    margin: 0 0 1.3rem;
+    color: var(--ink);
+  }
+  pre code { background: none; padding: 0; white-space: pre; color: inherit; }
+  pre .cm { color: var(--ink-faint); font-style: italic; }
+  pre .out { color: var(--ink-soft); }
+
+  /* ---------- callouts ---------- */
+  .box {
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1.1rem 1.3rem;
+    margin: 0 0 1.3rem;
+  }
+  .box .box-label {
+    font-family: var(--font-label);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+    display: block;
+  }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+
+  .analogy {
+    border: 1px dashed var(--rule);
+    border-radius: 8px;
+    padding: 1rem 1.3rem;
+    margin: 0 0 1.3rem;
+    background: transparent;
+  }
+  .analogy .box-label {
+    font-family: var(--font-label);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+    display: block;
+  }
+
+  /* ---------- tables ---------- */
+  .tbl-wrap { overflow-x: auto; margin: 0 0 1.5rem; border: 1px solid var(--rule); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; min-width: 420px; }
+  caption { text-align: left; font-family: var(--font-label); font-size: 0.78rem; letter-spacing: 0.06em; color: var(--ink-faint); padding: 0.6rem 0.9rem 0; }
+  th, td { text-align: left; padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+  thead th {
+    font-family: var(--font-label);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--surface);
+    font-weight: 600;
+  }
+  tbody td { font-family: var(--font-mono); font-size: 0.85rem; }
+  tbody td.prose { font-family: var(--font-body); font-size: 0.92rem; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface); }
+
+  /* ---------- bit diagrams ---------- */
+  .bitfield { margin: 0 0 1.6rem; }
+  .bitfield svg { width: 100%; height: auto; display: block; }
+  .bitfield-cap { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-faint); margin-top: 0.5rem; }
+
+  /* ---------- misc ---------- */
+  hr.div { border: none; border-top: 1px solid var(--rule); margin: 2.6rem 0; }
+  .kicker-inline { font-family: var(--font-mono); font-size: 0.82rem; color: var(--ink-faint); }
+  .step-list { counter-reset: step; list-style: none; padding-left: 0; }
+  .step-list > li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 2.6rem;
+    margin-bottom: 1.3rem;
+  }
+  .step-list > li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 0;
+    width: 1.8rem; height: 1.8rem;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .glossary dt { font-family: var(--font-mono); font-weight: 600; color: var(--ink); margin-top: 0.9rem; }
+  .glossary dd { margin: 0.15rem 0 0; color: var(--ink-soft); }
+
+  footer.end {
+    max-width: 42rem;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--rule); padding: 1.5rem 1.25rem; }
+    main { padding: 2rem 1.25rem 4rem; }
+  }
+</style>
+
+<div class="layout">
+  <nav class="toc" aria-label="Índice">
+    <p class="toc-eyebrow">RTM32 desde cero</p>
+    <ol>
+      <li><a href="#c1">Qué es esto y para qué sirve</a></li>
+      <li><a href="#c2">El panorama general del sistema</a></li>
+      <li><a href="#c3">El procesador STX4</a></li>
+      <li><a href="#c4">Memoria: dónde vive todo</a></li>
+      <li><a href="#c5">Cómo se arma una instrucción</a></li>
+      <li><a href="#c6">Los tres formatos: R, I y J</a></li>
+      <li><a href="#c7">El repertorio de instrucciones</a></li>
+      <li><a href="#c8">Excepciones y modos de privilegio</a></li>
+      <li><a href="#c9">Usar el emulador en la práctica</a></li>
+      <li><a href="#c10">Errores típicos al programar a mano</a></li>
+      <li><a href="#c11">Glosario rápido</a></li>
+    </ol>
+    <div class="toc-foot">
+      STX4 · arquitectura TM32<br>
+      Sistema RTM32, modo educativo
+    </div>
+  </nav>
+
+  <main>
+    <div class="masthead">
+      <p class="kicker">Guía completa, sin conocimientos previos</p>
+      <h1>Entendiendo RTM32 de punta a punta</h1>
+      <p class="lede">RTM32 es un emulador de una computadora inventada con fines educativos: un procesador
+      llamado STX4 que ejecuta un lenguaje de máquina propio llamado TM32. Este documento explica qué es,
+      por qué existe, cómo está armado por dentro y cómo se usa — asumiendo que nunca tocaste algo así.</p>
+    </div>
+
+    <!-- 1 -->
+    <section class="chapter" id="c1">
+      <div class="chap-head"><span class="chap-num">01</span><h2>Qué es esto y para qué sirve</h2></div>
+
+      <p>Una computadora real, por dentro, no entiende instrucciones en español ni en ningún lenguaje de
+      programación como Python o C. Entiende únicamente números binarios: patrones de <code>0</code> y
+      <code>1</code> que, según cómo estén acomodados, significan "sumá estos dos valores", "guardá esto en
+      memoria" o "saltá a otra parte del programa". A ese vocabulario de números que el procesador entiende
+      se lo llama <em class="term">conjunto de instrucciones</em> o <em class="term">ISA</em> (Instruction
+      Set Architecture).</p>
+
+      <p>Diseñar y construir un procesador de verdad, en silicio, es carísimo y lento. Por eso, para estudiar
+      cómo funciona una CPU por dentro, es mucho más práctico construir un <em class="term">emulador</em>:
+      un programa común y corriente, que corre en tu computadora normal, pero que simula el comportamiento de
+      un procesador inventado. RTM32 es exactamente eso.</p>
+
+      <div class="box">
+        <span class="box-label">En una frase</span>
+        <p>RTM32 es un programa que finge ser una computadora. Adentro de esa computadora fingida vive un
+        procesador llamado <strong>STX4</strong>, que ejecuta un lenguaje de máquina inventado llamado
+        <strong>TM32</strong>. Vos le das instrucciones codificadas a mano en binario, y él las ejecuta
+        exactamente como lo haría un chip real.</p>
+      </div>
+
+      <p>El objetivo declarado del proyecto no es la velocidad ni la utilidad práctica, sino la claridad:
+      dar un modelo de programación simple para que estudiantes de arquitectura de computadoras aprendan a
+      escribir código en ensamblador, entender la codificación binaria de instrucciones, y eventualmente
+      construir software de sistema — como una <em class="term">boot ROM</em> (el código mínimo que arranca
+      una máquina) — desde cero.</p>
+
+      <p>Alrededor del emulador hay dos herramientas más: <code>RTM32AS</code>, un compilador que traduce
+      texto en ensamblador a los números binarios que el procesador entiende, y <code>RTM32FMT</code>, un
+      utilitario para preparar discos virtuales. Este documento se concentra en el emulador y en cómo
+      funciona el procesador que simula.</p>
+    </section>
+
+    <!-- 2 -->
+    <section class="chapter" id="c2">
+      <div class="chap-head"><span class="chap-num">02</span><h2>El panorama general del sistema</h2></div>
+
+      <p>Pensá la máquina completa como una ciudad chica con una única avenida principal por donde circula
+      absolutamente todo: esa avenida es el <em class="term">bus del sistema</em>, un canal de 32 bits que
+      conecta al procesador con la memoria y con los dispositivos externos (por ejemplo, el puerto serie que
+      imprime texto en pantalla).</p>
+
+      <div class="bitfield">
+        <svg viewBox="0 0 720 210" role="img" aria-label="Diagrama de bloques del sistema RTM32">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-faint)"></path>
+            </marker>
+          </defs>
+          <rect x="20" y="20" width="150" height="60" rx="8" fill="none" stroke="var(--accent)" stroke-width="1.6"></rect>
+          <text x="95" y="45" text-anchor="middle" font-family="var(--font-mono)" font-size="13" fill="var(--ink)" font-weight="600">CPU</text>
+          <text x="95" y="63" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--ink-soft)">STX4</text>
+
+          <rect x="550" y="20" width="150" height="60" rx="8" fill="none" stroke="var(--rule)" stroke-width="1.6"></rect>
+          <text x="625" y="45" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--ink)" font-weight="600">Controlador de</text>
+          <text x="625" y="63" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--ink)" font-weight="600">interrupciones</text>
+
+          <rect x="20" y="130" width="220" height="60" rx="8" fill="var(--surface)" stroke="var(--rule)" stroke-width="1.2"></rect>
+          <text x="130" y="155" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--ink)" font-weight="600">User Space (RAM)</text>
+          <text x="130" y="173" text-anchor="middle" font-family="var(--font-mono)" font-size="11" fill="var(--ink-faint)">0x00000000 en adelante</text>
+
+          <rect x="260" y="130" width="200" height="60" rx="8" fill="var(--surface)" stroke="var(--rule)" stroke-width="1.2"></rect>
+          <text x="360" y="155" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--ink)" font-weight="600">Kernel Space (RAM)</text>
+          <text x="360" y="173" text-anchor="middle" font-family="var(--font-mono)" font-size="11" fill="var(--ink-faint)">privilegiado</text>
+
+          <rect x="480" y="130" width="220" height="60" rx="8" fill="var(--surface)" stroke="var(--rule)" stroke-width="1.2"></rect>
+          <text x="590" y="155" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--ink)" font-weight="600">Dispositivos (MMIO)</text>
+          <text x="590" y="173" text-anchor="middle" font-family="var(--font-mono)" font-size="11" fill="var(--ink-faint)">0xFFFFF000 en adelante</text>
+
+          <rect x="20" y="98" width="680" height="14" fill="none" stroke="var(--ink-faint)" stroke-width="1.2" stroke-dasharray="2 3"></rect>
+          <text x="360" y="108" text-anchor="middle" font-family="var(--font-label)" font-size="10.5" letter-spacing="0.08em" fill="var(--ink-faint)">BUS DE 32 BITS — TODO PASA POR ACÁ</text>
+
+          <line x1="95" y1="80" x2="130" y2="130" stroke="var(--ink-faint)" stroke-width="1.2" marker-end="url(#arrow)"></line>
+          <line x1="625" y1="80" x2="590" y2="130" stroke="var(--ink-faint)" stroke-width="1.2" marker-end="url(#arrow)"></line>
+          <line x1="170" y1="50" x2="550" y2="50" stroke="var(--ink-faint)" stroke-width="1.2" marker-end="url(#arrow)" marker-start="url(#arrow)"></line>
+        </svg>
+        <p class="bitfield-cap">La CPU, el controlador de interrupciones y toda la memoria comparten el mismo bus de 32 bits.</p>
+      </div>
+
+      <p>Esa avenida única tiene una consecuencia importante: como todo el espacio de direcciones es un solo
+      número de 32 bits (de <code>0x00000000</code> a <code>0xFFFFFFFF</code>, es decir 4&nbsp;GiB en
+      teoría), la memoria y los dispositivos comparten el mismo "vecindario numérico". Por eso se dice que
+      RTM32 usa <em class="term">memoria mapeada</em>: escribirle a un dispositivo (como la pantalla) se ve,
+      desde el punto de vista del procesador, exactamente igual que escribirle a un byte de RAM — solo cambia
+      la dirección a la que apuntás.</p>
+
+      <p>Dentro de esa ciudad hay dos barrios con reglas de acceso distintas, separados justo por la mitad
+      del espacio de direcciones (<code>0x80000000</code>):</p>
+
+      <ul>
+        <li><strong>User Space</strong> (<code>0x00000000</code>–<code>0x7FFFFFFF</code>): accesible sin
+        restricciones desde cualquier modo de ejecución.</li>
+        <li><strong>Kernel Space</strong> (<code>0x80000000</code>–<code>0xFFFFFFFF</code>): reservado para
+        código privilegiado. Cualquier intento de tocarlo sin permiso dispara una excepción de inmediato.
+        Ahí adentro vive la <em class="term">ROM de arranque</em>, en la dirección fija
+        <code>0xF0000000</code>, que es literalmente el primer lugar que mira el procesador al prenderse.</li>
+      </ul>
+
+      <p>Este límite entre los dos barrios está "soldado" en la arquitectura: no se puede mover ni
+      reconfigurar. Es la manera que tiene RTM32 de modelar, de forma simplificada, la separación entre
+      "modo sistema operativo" y "modo aplicación" que tienen las computadoras reales.</p>
+    </section>
+
+    <!-- 3 -->
+    <section class="chapter wide" id="c3">
+      <div class="chap-head"><span class="chap-num">03</span><h2>El procesador STX4</h2></div>
+
+      <p>STX4 es un procesador <em class="term">RISC</em> (Reduced Instruction Set Computer): un estilo de
+      diseño que apuesta por tener pocas instrucciones, todas del mismo tamaño y todas simples, en vez de
+      tener instrucciones gigantes que hacen muchas cosas a la vez. Es de un solo núcleo, ejecuta las
+      instrucciones una por una y en el orden en que aparecen — nada de adivinar el futuro ni ejecutar cosas
+      fuera de orden, como sí hacen los procesadores modernos de alto rendimiento. Esto lo hace predecible y
+      fácil de razonar, que es justamente el punto para un procesador con fines didácticos.</p>
+
+      <p>Sigue además el modelo clásico <em class="term">load/store</em>: las cuentas (sumar, comparar,
+      desplazar bits) sólo se hacen sobre registros, nunca directamente sobre memoria. Para operar con un
+      dato que está en memoria, primero hay que traerlo a un registro con una instrucción de carga
+      (<code>load</code>), y para guardarlo de vuelta hay que usar una instrucción de almacenamiento
+      (<code>store</code>). Es una separación de responsabilidades: la memoria guarda cosas, los registros
+      son donde se piensa.</p>
+
+      <h3>Los 32 registros de trabajo</h3>
+      <p>Un <em class="term">registro</em> es simplemente una casillita de 32 bits dentro del propio
+      procesador — muchísimo más rápida de leer y escribir que la memoria principal, pero también mucho más
+      chica en cantidad (hay sólo 32 de estas casillas, numeradas de <code>$0</code> a <code>$31</code>).
+      Cada una tiene, además de su número, un alias por convención que indica para qué se usa habitualmente
+      — aunque el hardware no fuerza esa convención, salvo en el registro <code>$0</code>.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <caption>Tabla 3.1 — banco de registros de propósito general</caption>
+          <thead><tr><th>Registro</th><th>Alias</th><th>Para qué se usa</th></tr></thead>
+          <tbody>
+            <tr><td>$0</td><td>$zero</td><td class="prose">Fijo en cero. Escribirle no hace nada — es útil como "dato nulo" instantáneo.</td></tr>
+            <tr><td>$1</td><td>$ra</td><td class="prose">Dirección de retorno: adónde volver después de una llamada a función.</td></tr>
+            <tr><td>$2, $3</td><td>$k0, $k1</td><td class="prose">Reservados para el manejo de interrupciones del sistema operativo.</td></tr>
+            <tr><td>$4–$7</td><td>$lr0–$lr3</td><td class="prose">Registros de enlace extra, para funciones que necesitan más de un punto de retorno (corrutinas).</td></tr>
+            <tr><td>$8–$13</td><td>$a0–$a5</td><td class="prose">Argumentos que se pasan a una función.</td></tr>
+            <tr><td>$14–$19</td><td>$t0–$t5</td><td class="prose">Temporales: valores de vida corta, no sobreviven una llamada a función.</td></tr>
+            <tr><td>$20–$27</td><td>$s0–$s7</td><td class="prose">Guardados: sí sobreviven una llamada a función.</td></tr>
+            <tr><td>$28</td><td>$fp</td><td class="prose">Puntero de marco de pila (frame pointer).</td></tr>
+            <tr><td>$29</td><td>$gp</td><td class="prose">Puntero a datos globales.</td></tr>
+            <tr><td>$30</td><td>$sp</td><td class="prose">Puntero de pila (stack pointer).</td></tr>
+            <tr><td>$31</td><td>$at</td><td class="prose">Temporal reservado para el ensamblador.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="analogy">
+        <span class="box-label">Para bajarlo a tierra</span>
+        <p>Pensá los registros como la mesada de una cocina: es donde realmente cortás y mezclás los
+        ingredientes. La heladera (memoria) tiene mucho más lugar, pero cada vez que necesitás algo de ahí
+        tenés que caminar hasta ella y volver — más lento. Por eso un buen programa trata de mantener en la
+        mesada (registros) todo lo que está usando activamente.</p>
+      </div>
+
+      <h3>Los 7 registros especiales</h3>
+      <p>Además de los 32 de trabajo, hay un segundo banco chiquito de <em class="term">registros
+      especiales</em>, que no se usan para cálculos sino para reflejar el estado interno del procesador. No
+      se acceden como los otros — hacen falta instrucciones específicas, <code>CFS</code> (leer) y
+      <code>CTS</code> (escribir), pasándoles el índice del registro que se quiere tocar.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <caption>Registros especiales, en el orden en que los indexa CFS/CTS</caption>
+          <thead><tr><th>Índice</th><th>Nombre</th><th>Qué guarda</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>$psw</td><td class="prose">Estado del procesador: banderas aritméticas y modo de privilegio (ver más abajo).</td></tr>
+            <tr><td>1</td><td>$ecr</td><td class="prose">Código que identifica qué excepción ocurrió.</td></tr>
+            <tr><td>2</td><td>$epc</td><td class="prose">Dirección a la que volver después de atender una excepción.</td></tr>
+            <tr><td>3</td><td>$esr</td><td class="prose">Copia de $psw tomada justo antes de la excepción, para poder restaurarla.</td></tr>
+            <tr><td>4</td><td>$bva</td><td class="prose">Dirección de memoria inválida que causó la última falla de acceso.</td></tr>
+            <tr><td>5</td><td>$vbr</td><td class="prose">Dirección base de la tabla de manejadores de excepción. Al resetear vale <code>0xF0000000</code>.</td></tr>
+            <tr><td>6</td><td>$pir</td><td class="prose">Identificación del procesador. De sólo lectura, cableado de fábrica.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>El PSW: ocho semáforos sobre el último resultado</h3>
+      <p><code>$psw</code> (Program Status Word) es el registro especial más importante. Sus bits bajos
+      funcionan como semáforos que se prenden o apagan solos después de cada operación aritmética o lógica,
+      y sirven para tomar decisiones más adelante en el programa (por ejemplo, "¿el resultado anterior dio
+      cero?").</p>
+
+      <div class="bitfield">
+        <svg viewBox="0 0 640 90" role="img" aria-label="Formato del registro PSW">
+          <g font-family="var(--font-mono)" font-size="12" fill="var(--ink)">
+            <rect x="0" y="10" width="440" height="36" fill="var(--surface)" stroke="var(--rule)"></rect>
+            <text x="220" y="33" text-anchor="middle" fill="var(--ink-faint)">sin usar</text>
+            <rect x="440" y="10" width="30" height="36" fill="none" stroke="var(--accent)"></rect>
+            <text x="455" y="33" text-anchor="middle" font-weight="600">T</text>
+            <rect x="470" y="10" width="30" height="36" fill="none" stroke="var(--accent)"></rect>
+            <text x="485" y="33" text-anchor="middle" font-weight="600">M</text>
+            <rect x="500" y="10" width="30" height="36" fill="none" stroke="var(--accent)"></rect>
+            <text x="515" y="33" text-anchor="middle" font-weight="600">I</text>
+            <rect x="530" y="10" width="30" height="36" fill="none" stroke="var(--accent)"></rect>
+            <text x="545" y="33" text-anchor="middle" font-weight="600">N</text>
+            <rect x="560" y="10" width="30" height="36" fill="none" stroke="var(--accent)"></rect>
+            <text x="575" y="33" text-anchor="middle" font-weight="600">O</text>
+            <rect x="590" y="10" width="25" height="36" fill="none" stroke="var(--accent)"></rect>
+            <text x="602" y="33" text-anchor="middle" font-weight="600">C</text>
+            <rect x="615" y="10" width="25" height="36" fill="none" stroke="var(--accent)"></rect>
+            <text x="627" y="33" text-anchor="middle" font-weight="600">Z</text>
+            <text x="220" y="66" text-anchor="middle" font-size="10.5" fill="var(--ink-faint)">bits 31–7</text>
+            <text x="627" y="66" text-anchor="middle" font-size="10.5" fill="var(--ink-faint)">bit 0</text>
+          </g>
+        </svg>
+        <p class="bitfield-cap">Z, C, O y N son las banderas de resultado; M, I y T controlan modo y permisos.</p>
+      </div>
+
+      <ul>
+        <li><strong>Z</strong> (zero) — se prende si el resultado dio exactamente cero.</li>
+        <li><strong>N</strong> (negative) — se prende si el resultado, interpretado con signo, es negativo.</li>
+        <li><strong>C</strong> (carry) — pensada para aritmética <em>sin signo</em>: se prende si una suma
+        se "pasó" del máximo representable, o si una resta necesitó "pedir prestado".</li>
+        <li><strong>O</strong> (overflow) — pensada para aritmética <em>con signo</em>: se prende cuando el
+        resultado matemático no entra en el rango de 32 bits con signo (por ejemplo, sumar dos positivos
+        grandes y que el resultado "dé negativo" por desborde).</li>
+        <li><strong>M</strong> — 1 si el procesador está en modo privilegiado (kernel), 0 si está en modo
+        usuario restringido.</li>
+        <li><strong>I</strong> — si está en 1, el procesador acepta interrupciones externas.</li>
+        <li><strong>T</strong> — habilita que se puedan disparar excepciones de software incluso estando ya
+        en modo kernel.</li>
+      </ul>
+
+      <div class="analogy">
+        <span class="box-label">Para bajarlo a tierra</span>
+        <p>C y O parecen medir lo mismo pero no: es la diferencia entre preguntar "¿este número, tratado
+        como cantidad de plata, se pasó del techo de la caja registradora?" (C) versus "¿este número,
+        tratado como podía-ser-negativo, cambió de signo de forma imposible?" (O). El mismo patrón de bits
+        puede disparar una sin la otra, según qué pregunta te importa.</p>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="chapter" id="c4">
+      <div class="chap-head"><span class="chap-num">04</span><h2>Memoria: dónde vive todo</h2></div>
+
+      <p>El espacio de direcciones es plano y lineal: un solo número de 32 bits ubica cualquier byte, sin
+      capas de traducción ni paginación (no hay memoria virtual — eso se sacrifica a propósito, para
+      mantener el modelo simple). Los datos se guardan en formato <em class="term">little-endian</em>: el
+      byte menos significativo de un número va primero en memoria.</p>
+
+      <h3>Tres tamaños, tres reglas de alineación</h3>
+      <p>RTM32 mueve datos de tres tamaños distintos, y cada uno exige que la dirección de memoria sea
+      "prolija" — un múltiplo exacto de su propio tamaño. Pedir un dato en una dirección que no cumple esa
+      regla no redondea ni ajusta nada: dispara una excepción (<code>ALIGNMENT_FAULT</code>) al instante.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <caption>Reglas de alineación</caption>
+          <thead><tr><th>Tamaño</th><th>Bits</th><th>Dirección debe ser múltiplo de</th></tr></thead>
+          <tbody>
+            <tr><td>Byte</td><td>8</td><td class="prose">1 (sin restricción)</td></tr>
+            <tr><td>Media palabra (halfword)</td><td>16</td><td class="prose">2</td></tr>
+            <tr><td>Palabra (word)</td><td>32</td><td class="prose">4</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Las instrucciones mismas también son palabras de 32 bits, así que el propio contador de programa
+      (<code>$pc</code>) también tiene que avanzar siempre de a múltiplos de 4.</p>
+
+      <h3>La ROM y el arranque</h3>
+      <p>La memoria ROM contiene el código de arranque y la tabla de vectores de excepción, y no se puede
+      modificar por software. Al prender (o resetear) la máquina, tres cosas pasan siempre en el mismo
+      orden:</p>
+      <ol>
+        <li>El contador de programa se fuerza a <code>0xF0000000</code> — ahí es donde tiene que estar el
+        primer código que se ejecuta.</li>
+        <li>El banco de 32 registros se pone en cero.</li>
+        <li>El procesador arranca en modo kernel, con interrupciones apagadas y traps habilitados — lo
+        justo para poder inicializar el sistema con seguridad antes de aceptar nada externo.</li>
+      </ol>
+    </section>
+
+    <!-- 5 -->
+    <section class="chapter" id="c5">
+      <div class="chap-head"><span class="chap-num">05</span><h2>Cómo se arma una instrucción</h2></div>
+
+      <p>Esta es la parte que más intimida al empezar, así que vamos despacio y desde el principio
+      absoluto.</p>
+
+      <div class="analogy">
+        <span class="box-label">Antes de nada: ¿qué es codificar una instrucción?</span>
+        <p>Una instrucción de máquina no es más que un número de 32 bits. Ese número, leído en pedacitos,
+        te dice qué hacer. Es como un formulario con casilleros de ancho fijo: "casillero 1: qué operación
+        es", "casillero 2: con qué registro", "casillero 3: con qué otro registro", etc. Codificar una
+        instrucción a mano es simplemente llenar esos casilleros con los números correctos y después pegar
+        todos los casilleros uno al lado del otro para formar el número final de 32 bits.</p>
+      </div>
+
+      <p>Todas las instrucciones de TM32 miden exactamente 32 bits, sin excepción. Los primeros 5 bits (los
+      más altos, del 31 al 27) siempre significan lo mismo en toda la arquitectura: son el
+      <em class="term">opcode</em>, el número que identifica de qué familia de instrucción se trata.
+      El resto de los 27 bits se reparten distinto según la familia — a esa distribución se la llama
+      <em class="term">formato</em>, y TM32 tiene tres: R, I y J.</p>
+
+      <h3>Cómo pegar los casilleros: la técnica del corrimiento</h3>
+      <p>Para construir el número final, cada campo se multiplica por una potencia de 2 que lo "empuja"
+      hasta su posición correcta dentro de los 32 bits, y después se suman todos los campos ya empujados.
+      Multiplicar por 2<sup>n</sup> es lo mismo que correr un número <code>n</code> lugares hacia la
+      izquierda en binario — por eso a esto se lo llama <em>shift</em> (corrimiento).</p>
+
+      <div class="box">
+        <span class="box-label">Ejemplo mínimo, a mano</span>
+        <p>Supongamos que querés poner el registro número <code>10</code> (en binario <code>01010</code>)
+        en un campo que empieza en el bit 22. Lo que hacés es:</p>
+        <pre><code>10 × 2^22  =  10 × 4.194.304  =  41.943.040  =  0x02800000</code></pre>
+        <p>Ese <code>0x02800000</code> ya es "el registro 10, pero corrido hasta su casillero". Repetís lo
+        mismo para cada campo de la instrucción (con su propia potencia de 2 según en qué bit arranca su
+        casillero) y al final sumás todo. El resultado es la palabra de 32 bits lista para ejecutar.</p>
+      </div>
+
+      <p>No hace falta memorizar las potencias de 2: alcanza con saber en qué bit arranca cada campo y
+      calcular <code>2^bit</code> con una calculadora, o directamente razonar en hexadecimal (cada 4 bits
+      son exactamente un dígito hexadecimal, así que correr 4 bits es lo mismo que agregar un
+      <code>0</code> a la derecha en hex).</p>
+    </section>
+
+    <!-- 6 -->
+    <section class="chapter wide" id="c6">
+      <div class="chap-head"><span class="chap-num">06</span><h2>Los tres formatos: R, I y J</h2></div>
+
+      <p>Los 27 bits que sobran después del opcode se organizan de tres maneras posibles. Cuál de las tres
+      se usa está determinado por el opcode mismo — no es una elección libre de cada instrucción.</p>
+
+      <h3>Formato R — operaciones entre registros</h3>
+      <p>Se usa para todo lo que combina registros entre sí: sumar, comparar, desplazar bits, multiplicar,
+      dividir, acceder a registros especiales. Como <em>todas</em> las instrucciones tipo R comparten el
+      mismo opcode (<code>00000</code>), necesitan un segundo campo para diferenciarse entre ellas: el
+      <code>func</code>, en los 6 bits más bajos.</p>
+
+      <div class="bitfield">
+        <svg viewBox="0 0 700 74" role="img" aria-label="Formato tipo R">
+          <g font-family="var(--font-mono)" font-size="12" fill="var(--ink)">
+            <rect x="0" y="10" width="90" height="34" fill="var(--accent-soft)" stroke="var(--accent)"></rect>
+            <text x="45" y="32" text-anchor="middle">opcode</text>
+            <rect x="90" y="10" width="110" height="34" fill="none" stroke="var(--rule)"></rect>
+            <text x="145" y="32" text-anchor="middle">rs</text>
+            <rect x="200" y="10" width="110" height="34" fill="none" stroke="var(--rule)"></rect>
+            <text x="255" y="32" text-anchor="middle">rt</text>
+            <rect x="310" y="10" width="110" height="34" fill="none" stroke="var(--rule)"></rect>
+            <text x="365" y="32" text-anchor="middle">rd</text>
+            <rect x="420" y="10" width="105" height="34" fill="none" stroke="var(--rule)"></rect>
+            <text x="472" y="32" text-anchor="middle">param</text>
+            <rect x="525" y="10" width="20" height="34" fill="var(--surface)" stroke="var(--rule)"></rect>
+            <text x="535" y="32" text-anchor="middle" font-size="9">x</text>
+            <rect x="545" y="10" width="155" height="34" fill="var(--accent-soft)" stroke="var(--accent)"></rect>
+            <text x="622" y="32" text-anchor="middle">func</text>
+          </g>
+          <g font-family="var(--font-mono)" font-size="9.5" fill="var(--ink-faint)">
+            <text x="0" y="60">31</text><text x="90" y="60">26</text><text x="200" y="60">21</text>
+            <text x="310" y="60">16</text><text x="420" y="60">12</text><text x="545" y="60">6</text><text x="690" y="60">0</text>
+          </g>
+        </svg>
+        <p class="bitfield-cap">5 + 5 + 5 + 5 + 5 + 1 + 6 = 32 bits. "x" es un bit reservado, siempre en 0.</p>
+      </div>
+
+      <ul>
+        <li><code>rs</code>, <code>rt</code> — los dos registros fuente.</li>
+        <li><code>rd</code> — el registro destino, donde se guarda el resultado.</li>
+        <li><code>param</code> — campo comodín de 5 bits: según la instrucción es una cantidad de
+        desplazamiento (para <code>SLL</code>/<code>SRL</code>/<code>SRA</code>), un índice de registro
+        especial (para <code>CFS</code>/<code>CTS</code>) o un índice de la tabla de excepciones (para
+        <code>TRAP</code>). Cuando no se usa, va en cero.</li>
+        <li><code>func</code> — el verdadero identificador de qué instrucción es, dentro de la familia R.</li>
+      </ul>
+
+      <h3>Formato I — operandos inmediatos y accesos a memoria</h3>
+      <p>Se usa cuando una instrucción necesita traer un valor constante metido adentro suyo (en vez de
+      sacarlo de un tercer registro), típicamente para sumar una constante, comparar contra un límite, o
+      calcular una dirección de memoria como "registro base + desplazamiento".</p>
+
+      <div class="bitfield">
+        <svg viewBox="0 0 700 74" role="img" aria-label="Formato tipo I">
+          <g font-family="var(--font-mono)" font-size="12" fill="var(--ink)">
+            <rect x="0" y="10" width="90" height="34" fill="var(--accent-soft)" stroke="var(--accent)"></rect>
+            <text x="45" y="32" text-anchor="middle">opcode</text>
+            <rect x="90" y="10" width="110" height="34" fill="none" stroke="var(--rule)"></rect>
+            <text x="145" y="32" text-anchor="middle">rs</text>
+            <rect x="200" y="10" width="110" height="34" fill="none" stroke="var(--rule)"></rect>
+            <text x="255" y="32" text-anchor="middle">rt</text>
+            <rect x="310" y="10" width="390" height="34" fill="var(--accent-soft)" stroke="var(--accent)"></rect>
+            <text x="505" y="32" text-anchor="middle">imm (17 bits)</text>
+          </g>
+          <g font-family="var(--font-mono)" font-size="9.5" fill="var(--ink-faint)">
+            <text x="0" y="60">31</text><text x="90" y="60">26</text><text x="200" y="60">21</text>
+            <text x="310" y="60">16</text><text x="690" y="60">0</text>
+          </g>
+        </svg>
+        <p class="bitfield-cap">5 + 5 + 5 + 17 = 32 bits.</p>
+      </div>
+
+      <p>El campo <code>imm</code> vale distinto según la instrucción que lo usa:</p>
+      <ul>
+        <li>en una suma o comparación con constante, es el número mismo (por ejemplo, el <code>10</code> en
+        <code>ADDI $11,$10,10</code>);</li>
+        <li>en un acceso a memoria, es el desplazamiento en bytes desde el registro base;</li>
+        <li>en un salto condicional, deja de ser una constante y pasa a ser "cuántas instrucciones saltar",
+        contadas desde la instrucción siguiente.</li>
+      </ul>
+
+      <p>Algunas familias de instrucciones no necesitan los 17 bits completos, y entonces reutilizan el bit
+      más alto de <code>imm</code> como si fuera un interruptor extra llamado <code>h</code>. Con
+      <code>h</code>, un mismo opcode alcanza para dos instrucciones hermanas — por ejemplo <code>ANDI</code>
+      (<code>h=0</code>, hace un AND normal) y <code>LCI</code> (<code>h=1</code>, arma una constante de
+      32&nbsp;bits pegando 16 bits nuevos arriba con la mitad de abajo de un registro).</p>
+
+      <h3>Formato J — saltos incondicionales largos</h3>
+      <p>El más simple de los tres: sólo tiene opcode y un campo enorme de desplazamiento, para saltos que
+      no dependen de ninguna condición ni de ningún registro.</p>
+
+      <div class="bitfield">
+        <svg viewBox="0 0 700 74" role="img" aria-label="Formato tipo J">
+          <g font-family="var(--font-mono)" font-size="12" fill="var(--ink)">
+            <rect x="0" y="10" width="90" height="34" fill="var(--accent-soft)" stroke="var(--accent)"></rect>
+            <text x="45" y="32" text-anchor="middle">opcode</text>
+            <rect x="90" y="10" width="610" height="34" fill="var(--accent-soft)" stroke="var(--accent)"></rect>
+            <text x="395" y="32" text-anchor="middle">jump (27 bits)</text>
+          </g>
+          <g font-family="var(--font-mono)" font-size="9.5" fill="var(--ink-faint)">
+            <text x="0" y="60">31</text><text x="90" y="60">26</text><text x="690" y="60">0</text>
+          </g>
+        </svg>
+        <p class="bitfield-cap">5 + 27 = 32 bits.</p>
+      </div>
+
+      <p>Los dos bits más altos de ese campo de 27 se reutilizan como sub-código, para distinguir
+      <code>J</code> (salto simple) de <code>JAL</code> (salto que además guarda la dirección de retorno).</p>
+
+      <h3>El truco que se repite en toda la arquitectura</h3>
+      <p>Vas a ver el mismo patrón una y otra vez: cuando una familia de instrucciones necesita más variantes
+      de las que su opcode alcanza a distinguir, TM32 "roba" uno o dos bits del campo de al lado (normalmente
+      <code>rt</code> o el propio inmediato) y los usa como sub-código. A cambio, el campo robado queda un
+      poco más chico. Es la manera que tiene la arquitectura de exprimir más instrucciones de las 32
+      combinaciones de opcode disponibles, sin inventar un cuarto formato.</p>
+    </section>
+
+    <!-- 7 -->
+    <section class="chapter wide" id="c7">
+      <div class="chap-head"><span class="chap-num">07</span><h2>El repertorio de instrucciones</h2></div>
+
+      <p>No hace falta memorizar las ~60 instrucciones de una — alcanza con reconocer las familias. Casi
+      todas caen en una de estas siete categorías:</p>
+
+      <h3>Aritméticas</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Instrucción</th><th>Hace</th></tr></thead>
+          <tbody>
+            <tr><td>ADD / ADDI / SUB</td><td class="prose">Suma y resta, entre registros o con una constante.</td></tr>
+            <tr><td>MUL</td><td class="prose">Multiplica y guarda los 32 bits bajos del resultado.</td></tr>
+            <tr><td>MULH / MULHU / MULHSU</td><td class="prose">Multiplica y guarda los 32 bits altos — con signo, sin signo, o mixto (un operando de cada).</td></tr>
+            <tr><td>DIV / DIVU</td><td class="prose">División entera, con y sin signo.</td></tr>
+            <tr><td>REST / RESTU</td><td class="prose">El resto de esa misma división (equivalente al <code>%</code> de C).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Lógicas y de construcción de constantes</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Instrucción</th><th>Hace</th></tr></thead>
+          <tbody>
+            <tr><td>AND / OR / XOR / NOR</td><td class="prose">Operaciones booleanas bit a bit entre dos registros.</td></tr>
+            <tr><td>ANDI / ORI / XORI</td><td class="prose">Igual, pero con una constante de 16 bits en vez del segundo registro.</td></tr>
+            <tr><td>ANI / ANH / ORH / XORH</td><td class="prose">Variantes que tocan sólo la mitad superior o inferior del registro, dejando la otra mitad intacta.</td></tr>
+            <tr><td>LCI</td><td class="prose">Arma una constante de 32 bits pegando 16 bits nuevos arriba con los 16 bits de abajo de otro registro — la forma de meter números grandes que no entran en un solo campo inmediato.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Desplazamiento y rotación</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Instrucción</th><th>Hace</th></tr></thead>
+          <tbody>
+            <tr><td>SLL / SLLR</td><td class="prose">Corre los bits a la izquierda (equivale a multiplicar por potencias de 2).</td></tr>
+            <tr><td>SRL / SRLR</td><td class="prose">Corre a la derecha rellenando con ceros (equivale a dividir sin signo).</td></tr>
+            <tr><td>SRA / SRAR</td><td class="prose">Corre a la derecha repitiendo el bit de signo — conserva si el número era negativo.</td></tr>
+            <tr><td>RLC / RLCR</td><td class="prose">Rota en círculo a la izquierda: lo que sale por un extremo entra por el otro, no se pierde nada.</td></tr>
+          </tbody>
+        </table>
+        <p class="bitfield-cap" style="padding:0 0.9rem 0.7rem">Las que terminan en <code>R</code> toman la cantidad a desplazar de un registro; las otras la traen fija en la propia instrucción.</p>
+      </div>
+
+      <h3>Comparación</h3>
+      <p><code>SLT</code>/<code>SLTU</code> (entre registros) y <code>SLTI</code>/<code>SLTIU</code> (contra
+      una constante) comparan "menor que" y dejan <code>1</code> o <code>0</code> en el registro destino —
+      a diferencia de muchas arquitecturas, el resultado de comparar es un valor común que podés guardar,
+      pasar como argumento o combinar, no sólo una bandera invisible.</p>
+
+      <h3>Acceso a memoria</h3>
+      <p>Por cada tamaño de dato hay una familia completa: carga simple, carga sin signo, carga indexada por
+      dos registros (sufijo <code>X</code>), y almacenamiento.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Tamaño</th><th>Cargar (con signo)</th><th>Cargar (sin signo)</th><th>Guardar</th></tr></thead>
+          <tbody>
+            <tr><td>Palabra (32 bits)</td><td>LW / LWX</td><td class="prose">—</td><td>SW / SWX</td></tr>
+            <tr><td>Media palabra (16 bits)</td><td>LH / LHX</td><td>LHU / LHUX</td><td>SH / SHX</td></tr>
+            <tr><td>Byte (8 bits)</td><td>LB / LBX</td><td>LBU / LBUX</td><td>SB / SBX</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>"Con signo" versus "sin signo" define qué se hace al pasar un dato chico a un registro de 32 bits:
+      la versión con signo repite el bit más alto del dato (para conservar si era negativo), la versión sin
+      signo rellena directamente con ceros.</p>
+
+      <h3>Transferencia de control (saltos)</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Instrucción</th><th>Hace</th></tr></thead>
+          <tbody>
+            <tr><td>BEQ / BNE</td><td class="prose">Salta si dos registros son iguales / distintos.</td></tr>
+            <tr><td>BLT / BGE</td><td class="prose">Salta si "menor que" / "mayor o igual" (con signo).</td></tr>
+            <tr><td>BLTU / BGEU</td><td class="prose">Las mismas dos comparaciones, pero sin signo.</td></tr>
+            <tr><td>J / JAL</td><td class="prose">Salto directo; JAL además guarda la dirección de retorno en $ra.</td></tr>
+            <tr><td>JALX</td><td class="prose">Como JAL, pero elegís vos en cuál de los cuatro $lr guardar el retorno.</td></tr>
+            <tr><td>JR / JALR / JALRX</td><td class="prose">Salto a la dirección que hay guardada en un registro — la base de las llamadas a función por puntero.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Notá que sólo existen "menor que" y "mayor o igual". Las otras comparaciones (mayor que, menor o
+      igual) no hacen falta como instrucciones aparte: se consiguen dando vuelta el orden de los operandos.
+      <code>A &gt; B</code> es lo mismo que <code>B &lt; A</code>.</p>
+
+      <h3>Sistema</h3>
+      <p><code>CFS</code> y <code>CTS</code> leen y escriben registros especiales. <code>TRAP</code>
+      dispara una excepción de software a propósito — guarda dónde estabas, salta a un manejador — y
+      <code>RFT</code> hace el camino inverso al terminar de atenderla.</p>
+    </section>
+
+    <!-- 8 -->
+    <section class="chapter" id="c8">
+      <div class="chap-head"><span class="chap-num">08</span><h2>Excepciones y modos de privilegio</h2></div>
+
+      <p>Una <em class="term">excepción</em> es una interrupción del flujo normal del programa, disparada
+      por el propio procesador ante algo anormal: una división por cero, un acceso desalineado, un intento
+      de tocar memoria privilegiada desde modo usuario, o un <code>TRAP</code> pedido a propósito por el
+      programa.</p>
+
+      <p>Cuando ocurre una, siempre pasa la misma secuencia:</p>
+      <ol>
+        <li>El procesador guarda en <code>$epc</code> la dirección adonde hay que volver.</li>
+        <li>Guarda una copia del <code>$psw</code> actual en <code>$esr</code>, para poder restaurarlo
+        después.</li>
+        <li>Pasa a modo kernel y salta a la dirección <code>$vbr + (índice × 4)</code> — la tabla de
+        manejadores de excepción, indexada según qué tipo de problema fue.</li>
+        <li>El código que atiende la excepción hace lo que tenga que hacer, y termina con <code>RFT</code>,
+        que restaura <code>$psw</code> desde <code>$esr</code> y el contador de programa desde
+        <code>$epc</code> — como si nada hubiera pasado, retomando exactamente donde se había quedado.</li>
+      </ol>
+
+      <p>Esta misma tabla de vectores atiende tanto las excepciones generadas por el propio procesador como
+      las interrupciones que llegan de dispositivos externos — se diferencian sólo por qué entrada de la
+      tabla usan.</p>
+    </section>
+
+    <!-- 9 -->
+    <section class="chapter wide" id="c9">
+      <div class="chap-head"><span class="chap-num">09</span><h2>Usar el emulador en la práctica</h2></div>
+
+      <p>Acá se junta todo lo anterior en un flujo de trabajo real: arrancar el emulador, conectarse a su
+      depurador, cargar una instrucción codificada a mano, y ver el resultado.</p>
+
+      <h3>Arrancar el emulador</h3>
+      <p>El binario <code>rtm32</code> no hace nada por sí solo si no le indicás una fuente de ejecución.
+      Para trabajar de forma interactiva, se lo levanta en modo depurador:</p>
+      <pre><code><span class="cm"># Depurador por la propia terminal</span>
+./rtm32 -d console
+
+<span class="cm"># Depurador como servidor telnet (permite conectarse desde otra terminal)</span>
+./rtm32 -d telnet
+<span class="out"># por defecto escucha en el puerto 4444</span></code></pre>
+
+      <p>Con el modo telnet, en otra terminal:</p>
+      <pre><code>telnet localhost 4444</code></pre>
+
+      <h3>Los comandos del depurador</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Comando</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td>set r&lt;N&gt; &lt;valor&gt;</td><td class="prose">Escribe un valor en el registro N.</td></tr>
+            <tr><td>set [dir] &lt;valor&gt;</td><td class="prose">Escribe una palabra de 32 bits en una dirección de memoria.</td></tr>
+            <tr><td>set pc &lt;dir&gt;</td><td class="prose">Mueve el contador de programa sin tocar el resto del estado.</td></tr>
+            <tr><td>step [n]</td><td class="prose">Ejecuta una instrucción (o n instrucciones).</td></tr>
+            <tr><td>registers</td><td class="prose">Muestra los 32 registros, PC, y los registros de control.</td></tr>
+            <tr><td>examine &lt;dir&gt;</td><td class="prose">Muestra el contenido de memoria a partir de esa dirección.</td></tr>
+            <tr><td>reset</td><td class="prose">Vuelve el PC a 0xF0000000 (no borra la memoria).</td></tr>
+            <tr><td>quit</td><td class="prose">Cierra la sesión — y de paso, todo el proceso del emulador.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Ejemplo completo, de punta a punta</h3>
+      <p>Vamos a codificar a mano una instrucción <code>ADD</code> que sume los registros <code>$10</code>
+      y <code>$11</code>, y deje el resultado en <code>$12</code>.</p>
+
+      <ol class="step-list">
+        <li><strong>Identificar opcode y func.</strong> ADD es tipo R (opcode <code>00000</code>), con
+        <code>func = 001100</code> (<code>0x0C</code>).</li>
+        <li><strong>Elegir los registros.</strong> <code>rs=10</code> (<code>01010</code>),
+        <code>rt=11</code> (<code>01011</code>), <code>rd=12</code> (<code>01100</code>).</li>
+        <li><strong>Correr cada campo a su lugar y sumar.</strong>
+          <pre><code>rs (bit 22): 10 × 2^22 = 0x02800000
+rt (bit 17): 11 × 2^17 = 0x00160000
+rd (bit 12): 12 × 2^12 = 0x0000C000
+func       :            0x0000000C
+                         -----------
+                         0x0296C00C</code></pre>
+        </li>
+        <li><strong>Cargar la instrucción y los operandos, y ejecutar.</strong>
+          <pre><code>set [0x0] 0x0296C00C
+set r10 15
+set r11 4
+step
+registers</code></pre>
+        </li>
+        <li><strong>Confirmar el resultado.</strong> <code>registers</code> debería mostrar
+        <code>R[12] = 0x00000013</code> (19 en decimal, que es 15+4) y el PC ya avanzado a
+        <code>0x00000004</code>.</li>
+      </ol>
+
+      <div class="box">
+        <span class="box-label">Por qué se prueba así, y no de otra forma</span>
+        <p>No existe todavía un ensamblador confiable para esta arquitectura como para escribir
+        <code>add $12,$10,$11</code> y que se traduzca solo. Por eso, para verificar de verdad que una
+        instrucción hace lo que el manual dice, hay que codificarla a mano, cargarla en memoria con
+        <code>set</code>, y comparar lo que <code>registers</code> muestra después del <code>step</code>
+        contra lo que uno esperaba. Es lento, pero es la única forma de confiar en el resultado.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="chapter" id="c10">
+      <div class="chap-head"><span class="chap-num">10</span><h2>Errores típicos al programar a mano</h2></div>
+
+      <ul>
+        <li><strong>Confundir el orden de los campos.</strong> El formato R lleva <code>rs, rt, rd</code>
+        en ese orden — pero la sintaxis de ensamblador de una instrucción como <code>ADD $12,$10,$11</code>
+        pone el destino primero. Es fácil mezclar cuál va en qué campo si se codifica apurado.</li>
+        <li><strong>Olvidarse un campo en cero.</strong> Los campos que "no se usan" en una instrucción
+        dada igual ocupan lugar en la palabra de 32 bits, y tienen que ir en <code>0</code> explícitamente
+        — si se deja basura ahí, el número final da mal aunque los campos que sí importan estén bien.</li>
+        <li><strong>Direcciones desalineadas.</strong> Escribir una media palabra en una dirección impar, o
+        una palabra en una dirección que no sea múltiplo de 4, dispara una excepción en vez de "ajustarse
+        sola".</li>
+        <li><strong>Contaminación entre pruebas.</strong> Una vez que el procesador cae en una excepción,
+        el estado (registros de control, banderas) queda modificado — probar la siguiente instrucción sin
+        arrancar un proceso nuevo del emulador puede mezclar resultados de la prueba anterior con la
+        actual.</li>
+        <li><strong>Sesión de <code>quit</code>.</strong> Cerrar la conexión con <code>quit</code> no sólo
+        termina la sesión del depurador: mata el proceso entero del emulador. Hay que levantar uno nuevo
+        para la próxima prueba.</li>
+      </ul>
+    </section>
+
+    <!-- 11 -->
+    <section class="chapter" id="c11">
+      <div class="chap-head"><span class="chap-num">11</span><h2>Glosario rápido</h2></div>
+
+      <dl class="glossary">
+        <dt>ISA</dt><dd>Instruction Set Architecture: el vocabulario completo de instrucciones que un procesador entiende.</dd>
+        <dt>RISC</dt><dd>Reduced Instruction Set Computer: filosofía de diseño con pocas instrucciones simples, de ancho fijo.</dd>
+        <dt>Opcode</dt><dd>Los 5 bits más altos de toda instrucción; identifican la familia.</dd>
+        <dt>func</dt><dd>Campo extra de 6 bits, sólo en el formato R, que distingue instrucciones que comparten opcode.</dd>
+        <dt>Registro</dt><dd>Casillero de 32 bits dentro del procesador, mucho más rápido que la memoria.</dd>
+        <dt>load/store</dt><dd>Modelo donde las cuentas sólo operan sobre registros; memoria se toca únicamente con instrucciones dedicadas de carga y guardado.</dd>
+        <dt>MMIO</dt><dd>Memory-Mapped I/O: los dispositivos se leen/escriben como si fueran direcciones de memoria comunes.</dd>
+        <dt>Little-endian</dt><dd>El byte menos significativo de un número se guarda primero en memoria.</dd>
+        <dt>Excepción</dt><dd>Interrupción del flujo normal disparada por el procesador ante algo anormal.</dd>
+        <dt>Trap</dt><dd>Excepción de software, disparada a propósito por el programa con la instrucción TRAP.</dd>
+        <dt>PSW</dt><dd>Program Status Word: registro especial con las banderas de resultado y el modo de privilegio actual.</dd>
+        <dt>Alineación</dt><dd>Regla que exige que la dirección de un dato sea múltiplo de su propio tamaño.</dd>
+      </dl>
+    </section>
+
+    <footer class="end">
+      Documento de referencia — arquitectura RTM32 / STX4 / TM32.
+    </footer>
+  </main>
+</div>

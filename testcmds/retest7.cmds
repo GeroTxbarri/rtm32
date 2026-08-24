@@ -1,0 +1,6 @@
+set [0x0] 0x0296F019
+set r10 0xFFFFFFFE
+set r11 3
+step
+registers
+quit

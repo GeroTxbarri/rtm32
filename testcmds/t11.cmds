@@ -1,0 +1,4 @@
+set [0x0] 0x08000007
+step
+registers
+quit

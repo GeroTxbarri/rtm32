@@ -1,0 +1,63 @@
+set pc 0x0
+set [0x0] 0x82960001
+set [0x4] 0x302A03E7
+set [0x8] 0x3028006F
+set r10 5
+set r11 5
+set r20 0
+set r21 0
+step
+registers
+step
+registers
+set pc 0x0
+set [0x0] 0x8A960001
+set r10 5
+set r11 9
+set r20 0
+set r21 0
+step
+registers
+step
+registers
+set pc 0x0
+set [0x0] 0x92960001
+set r10 3
+set r11 7
+set r20 0
+set r21 0
+step
+registers
+step
+registers
+set pc 0x0
+set [0x0] 0x9A960001
+set r10 7
+set r11 3
+set r20 0
+set r21 0
+step
+registers
+step
+registers
+set pc 0x0
+set [0x0] 0xA2960001
+set r10 1
+set r11 0xFFFFFFFF
+set r20 0
+set r21 0
+step
+registers
+step
+registers
+set pc 0x0
+set [0x0] 0xAA960001
+set r10 0xFFFFFFFF
+set r11 1
+set r20 0
+set r21 0
+step
+registers
+step
+registers
+quit

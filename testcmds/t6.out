@@ -1,0 +1,8 @@
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+RTM32 Computer v0.4
+RTM32> RTM32> RTM32> Register R10 set to 0x00000100
+RTM32> Register R12 set to 0x00000010
+RTM32> Register R11 set to 0xCAFEBABE
+RTM32> Connection closed by foreign host.

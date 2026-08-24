@@ -1,0 +1,37 @@
+set pc 0x0
+set [0x0] 0x0296C018
+set [0x4] 0x0296D01C
+set [0x8] 0x0296E01E
+set r10 7
+set r11 3
+step
+registers
+step
+registers
+step
+registers
+set pc 0x0
+set [0x0] 0x0296F019
+set [0x4] 0x0297001A
+set r10 0xFFFFFFFF
+set r11 0x80000000
+step
+registers
+step
+registers
+set pc 0x0
+set [0x0] 0x0297101B
+set r10 0xFFFFFFFF
+set r11 0x80000000
+step
+registers
+set pc 0x0
+set [0x0] 0x0297201D
+set [0x4] 0x0297301F
+set r10 0x80000000
+set r11 3
+step
+registers
+step
+registers
+quit

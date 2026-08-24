@@ -1,0 +1,6 @@
+set [0x0] 0x82960001
+set r10 5
+set r11 5
+step
+registers
+quit

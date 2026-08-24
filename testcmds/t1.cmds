@@ -1,0 +1,9 @@
+set [0x0] 0x0296C00C
+set [0x4] 0x0296D00D
+set r10 15
+set r11 4
+step
+registers
+step
+registers
+quit

@@ -1,0 +1,5 @@
+set [0x0] 0x02800106
+set r10 0x12345678
+step
+registers
+quit
