@@ -1,6 +1,0 @@
-set [0x0] 0x0296D01C
-set r10 10
-set r11 0
-step
-registers
-quit

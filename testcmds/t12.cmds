@@ -1,5 +1,0 @@
-set [0x0] 0x12800000
-set r10 0x30
-step
-registers
-quit

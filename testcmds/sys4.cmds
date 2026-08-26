@@ -1,4 +1,0 @@
-set [0x0] 0x02800020
-step
-registers
-quit

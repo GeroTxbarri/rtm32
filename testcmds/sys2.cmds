@@ -1,8 +1,0 @@
-set [0x0] 0x02800221
-set [0x4] 0x02C00220
-set r10 0x12345678
-step
-registers
-step
-registers
-quit

@@ -1,6 +1,0 @@
-set [0x0] 0x00000122
-step
-registers
-step
-registers
-quit

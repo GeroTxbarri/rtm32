@@ -1,5 +1,0 @@
-set [0x0] 0x229600FF
-set r10 0xFFFFFFFF
-step
-registers
-quit
